@@ -1,0 +1,48 @@
+import { describe, expect, it } from "vitest";
+import { appRouter } from "./routers";
+import { readFileSync } from "node:fs";
+import path from "node:path";
+
+const createCaller = appRouter.createCaller({} as never);
+
+function imageToBase64(fileName: string) {
+  return readFileSync(path.join(process.cwd(), "fixtures", fileName)).toString("base64");
+}
+
+describe("ocr.extractCin", () => {
+  it("extrait correctement une CIN fictive valide", async () => {
+    const result = await createCaller.ocr.extractCin({
+      fileName: "cin-valide-01.png",
+      mimeType: "image/png",
+      imageBase64: imageToBase64("cin-valide-01.png"),
+    });
+
+    expect(result.isCin).toBe(true);
+    expect(result.fields.nom.value).toBe("BENALI");
+    expect(result.fields.prenom.value).toBe("SALMA");
+    expect(result.fields.numeroCin.value).toBe("AB123456");
+  });
+
+  it("signale une date de naissance invalide", async () => {
+    const result = await createCaller.ocr.extractCin({
+      fileName: "cin-date-invalide.png",
+      mimeType: "image/png",
+      imageBase64: imageToBase64("cin-date-invalide.png"),
+    });
+
+    expect(result.fields.dateNaissance.status).toBe("invalid");
+    expect(result.errors).toContain("La date de naissance est absente ou peu plausible.");
+  });
+
+  it("rejette proprement un fichier qui n'est pas une CIN", async () => {
+    const result = await createCaller.ocr.extractCin({
+      fileName: "document-non-cin.png",
+      mimeType: "image/png",
+      imageBase64: imageToBase64("document-non-cin.png"),
+    });
+
+    expect(result.isCin).toBe(false);
+    expect(result.documentType).toBe("unknown");
+    expect(result.errors.length).toBeGreaterThan(0);
+  });
+});
