@@ -10,7 +10,7 @@
 - [x] Rédiger le README d'installation et d'utilisation
 - [x] Développer la présentation PowerPoint à partir de la trame
 - [x] Créer un dépôt GitHub privé
-- [ ] Pousser le code et la présentation sur GitHub
+- [x] Pousser le code et la présentation sur GitHub
 - [x] Implémenter une vraie OCR/vision sur images avec gestion d'échec robuste
 - [x] Remplacer les fixtures texte par 6 vraies images fictives de test
 - [x] Valider l'API OCR réelle sur images PNG fictives
