@@ -8,8 +8,8 @@
 - [x] Créer un jeu d'images fictives de test
 - [x] Tester le système de bout en bout
 - [x] Rédiger le README d'installation et d'utilisation
-- [ ] Développer la présentation PowerPoint à partir de la trame
-- [ ] Créer un dépôt GitHub privé
+- [x] Développer la présentation PowerPoint à partir de la trame
+- [x] Créer un dépôt GitHub privé
 - [ ] Pousser le code et la présentation sur GitHub
 - [x] Implémenter une vraie OCR/vision sur images avec gestion d'échec robuste
 - [x] Remplacer les fixtures texte par 6 vraies images fictives de test
