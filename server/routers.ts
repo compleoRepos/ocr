@@ -2,6 +2,7 @@ import { COOKIE_NAME } from "@shared/const";
 import type { CinExtractionResult, CinFieldResult, OcrRequestPayload } from "@shared/types";
 import { z } from "zod";
 import { createWorker } from "tesseract.js";
+import sharp from "sharp";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, router } from "./_core/trpc";
@@ -47,11 +48,27 @@ function extractAfterLabel(text: string, labels: string[]): string | null {
 async function extractTextFromImage(payload: OcrRequestPayload): Promise<string> {
   const worker = await createWorker("fra");
   try {
-    const buffer = Buffer.from(payload.imageBase64, "base64");
-    const { data } = await worker.recognize(buffer);
+    const rawBuffer = Buffer.from(payload.imageBase64, "base64");
+    const preprocessed = await preprocessImage(rawBuffer);
+    const { data } = await worker.recognize(preprocessed);
     return data.text || "";
   } finally {
     await worker.terminate();
+  }
+}
+
+async function preprocessImage(input: Buffer): Promise<Buffer> {
+  try {
+    return await sharp(input)
+      .rotate()
+      .resize({ width: 1600, withoutEnlargement: false })
+      .grayscale()
+      .normalize()
+      .sharpen()
+      .png()
+      .toBuffer();
+  } catch {
+    return input;
   }
 }
 

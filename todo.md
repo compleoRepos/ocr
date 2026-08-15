@@ -11,6 +11,10 @@
 - [x] Développer la présentation PowerPoint à partir de la trame
 - [x] Créer un dépôt GitHub privé
 - [x] Pousser le code et la présentation sur GitHub
+- [x] Ajouter le pré-traitement d'image au pipeline OCR (niveaux de gris, contraste, netteté)
+- [x] Créer des images dégradées de test et valider la robustesse
+- [x] Enregistrer une vidéo de démonstration de secours
+- [x] Mettre à jour le README et pousser les améliorations sur GitHub
 - [x] Implémenter une vraie OCR/vision sur images avec gestion d'échec robuste
 - [x] Remplacer les fixtures texte par 6 vraies images fictives de test
 - [x] Valider l'API OCR réelle sur images PNG fictives
