@@ -193,7 +193,20 @@ export const appRouter = router({
       )
       .mutation(async ({ input }) => {
         if (ocrEngine() === "gemini") {
-          return extractWithGemini(input);
+          const result = await extractWithGemini(input);
+          // Repli automatique : si le quota Gemini est dépassé (429),
+          // on bascule sur le moteur local Tesseract plutôt que de
+          // retourner une erreur à l'utilisateur.
+          const quotaExceeded = result.errors.some((e) => /quota|429/i.test(e));
+          if (quotaExceeded) {
+            const fallback = await performOcrExtraction(input);
+            fallback.errors = [
+              ...fallback.errors,
+              "Quota Gemini dépassé : extraction réalisée avec le moteur local Tesseract.",
+            ];
+            return fallback;
+          }
+          return result;
         }
         return performOcrExtraction(input);
       }),

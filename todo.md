@@ -25,6 +25,8 @@
 - [x] Améliorer le prompt Gemini pour la mise en page réelle (arabe+français)
 - [x] Valider la correction sur spécimens réels et fictifs
 - [x] Pousser la correction sur GitHub
+- [x] Ajouter le repli automatique Gemini→Tesseract sur quota dépassé
+- [x] Tester le repli et pousser sur GitHub
 - [x] Implémenter une vraie OCR/vision sur images avec gestion d'échec robuste
 - [x] Remplacer les fixtures texte par 6 vraies images fictives de test
 - [x] Valider l'API OCR réelle sur images PNG fictives
