@@ -3,6 +3,10 @@ import { appRouter } from "./routers";
 import { readFileSync } from "node:fs";
 import path from "node:path";
 
+// Ces tests valident le moteur local Tesseract : on force OCR_ENGINE=tesseract
+// pour éviter les appels réseau Gemini (lents et soumis à quota).
+process.env.OCR_ENGINE = "tesseract";
+
 const createCaller = appRouter.createCaller({} as never);
 
 function imageToBase64(fileName: string) {

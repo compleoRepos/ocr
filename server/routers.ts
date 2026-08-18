@@ -3,9 +3,14 @@ import type { CinExtractionResult, CinFieldResult, OcrRequestPayload } from "@sh
 import { z } from "zod";
 import { createWorker } from "tesseract.js";
 import sharp from "sharp";
+import { extractWithGemini } from "./gemini";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, router } from "./_core/trpc";
+
+function ocrEngine(): string {
+  return process.env.OCR_ENGINE ?? "gemini";
+}
 
 function field(value: string | null, confidence: number, message?: string): CinFieldResult {
   if (!value) {
@@ -186,7 +191,12 @@ export const appRouter = router({
           imageBase64: z.string().min(1),
         })
       )
-      .mutation(({ input }) => performOcrExtraction(input)),
+      .mutation(async ({ input }) => {
+        if (ocrEngine() === "gemini") {
+          return extractWithGemini(input);
+        }
+        return performOcrExtraction(input);
+      }),
   }),
 });
 

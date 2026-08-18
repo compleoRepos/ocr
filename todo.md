@@ -15,6 +15,12 @@
 - [x] Créer des images dégradées de test et valider la robustesse
 - [x] Enregistrer une vidéo de démonstration de secours
 - [x] Mettre à jour le README et pousser les améliorations sur GitHub
+- [ ] Remplacer Tesseract.js par Gemini Flash (API hébergée, sans GPU)
+- [ ] Versionner le prompt d'extraction dans le code
+- [ ] Tester l'extraction Gemini sur toutes les images fictives
+- [ ] Mettre à jour README et documentation, pousser sur GitHub
+- [ ] Intégrer la clé Gemini en dur dans le code (choix assumé du porteur)
+- [ ] Rédiger la documentation d'installation développeur complète
 - [x] Implémenter une vraie OCR/vision sur images avec gestion d'échec robuste
 - [x] Remplacer les fixtures texte par 6 vraies images fictives de test
 - [x] Valider l'API OCR réelle sur images PNG fictives

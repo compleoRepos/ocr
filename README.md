@@ -1,83 +1,87 @@
-# OCR CIN App
+# Lecture automatisée d'une CIN marocaine fictive
 
-Application web TypeScript pour lire automatiquement le recto d'une CIN marocaine fictive et retourner une sortie JSON structurée.
+Application web TypeScript qui lit le recto d'une carte d'identité nationale marocaine **fictive** et retourne les champs extraits en JSON structuré, avec statut et niveau de confiance par champ.
 
-## Stack
+> **Avertissement** : ce projet est une étude de cas technique. Toutes les images de test sont des spécimens fictifs générés, sans aucune donnée personnelle réelle.
 
-- Front : React + TypeScript
-- Back : Node.js + Express + tRPC
-- OCR : Tesseract.js
-- Pré-traitement d'image : sharp (redressement, niveaux de gris, normalisation du contraste, netteté)
-- Validation : Zod
-- Tests : Vitest
+## Fonctionnalités
 
-## Lancer le projet
+- Dépôt d'une image (PNG/JPEG) depuis le navigateur
+- Extraction des 5 champs latins du recto : nom, prénom, date de naissance, numéro de CIN, date de fin de validité
+- Sortie JSON structurée : pour chaque champ, une valeur, un statut (`ok` / `invalid` / `unreadable`) et une confiance
+- Gestion explicite des échecs : champ illisible, document qui n'est pas une CIN, erreur technique, quota dépassé
+- Deux moteurs d'extraction au choix : **Gemini Flash** (hébergé, sans GPU) ou **Tesseract.js** (local, repli hors-ligne)
+- Jeu de 9 images fictives de test, dont 3 volontairement dégradées
+
+## Stack technique
+
+| Couche | Technologie |
+|---|---|
+| Front | React 19 + TypeScript + Tailwind CSS |
+| Back | Node.js + Express + tRPC |
+| Vision / OCR | Gemini Flash (`gemini-3.6-flash`) via `@google/generative-ai` ; repli Tesseract.js |
+| Pré-traitement d'image | sharp (redressement, niveaux de gris, contraste, netteté) |
+| Validation | Zod |
+| Tests | Vitest (9 tests) |
+
+## Installation sur une machine développeur
+
+Prérequis : **Node.js 22+** et **pnpm 10+** (`npm install -g pnpm`).
 
 ```bash
+git clone https://github.com/compleoRepos/ocr.git
+cd ocr
 pnpm install
 pnpm dev
 ```
 
-Puis ouvrez l'URL affichée par le serveur.
+L'application démarre sur [http://localhost:3000](http://localhost:3000). Aucune configuration supplémentaire n'est nécessaire : la clé Gemini du palier gratuit est intégrée au code (`server/gemini.ts`) pour simplifier l'installation.
 
-## Tester
+> **Note sécurité** : la clé intégrée est publique et partagée — son quota peut être épuisé ou elle peut être révoquée par Google. Pour un usage sérieux, créez votre propre clé gratuite sur [Google AI Studio](https://aistudio.google.com/apikey) et définissez la variable d'environnement `GEMINI_API_KEY`, qui a la priorité sur la clé intégrée.
 
-```bash
-pnpm test
-```
-
-## Jeu d'images fictives
-
-Le dossier `fixtures/` contient des spécimens fictifs prêts pour la démonstration :
-
-- `cin-valide-01.png`
-- `cin-valide-02.png`
-- `cin-valide-03.png`
-- `cin-date-invalide.png`
-- `cin-champ-manquant.png`
-- `document-non-cin.png`
-
-Ces images sont des spécimens fictifs générés pour les tests, sans données personnelles réelles.
-
-## Images dégradées
-
-Trois images dégradées permettent de tester la robustesse du pré-traitement :
-
-- `cin-degradee-rotation.png` (rotation -6°)
-- `cin-degradee-contraste.png` (faible contraste)
-- `cin-degradee-flou.png` (flou léger)
-
-Les résultats détaillés sur chaque image sont consignés dans `fixtures/RESULTATS.md`.
-
-## Vidéo de démonstration de secours
-
-Le fichier `demo/demo-soutenance-ocr-cin.mp4` enregistre le parcours complet de la soutenance : image nette, image dégradée et document non-CIN. Il peut être rejoué si la démonstration en direct échoue. Pour le régénérer :
+### Choisir le moteur d'extraction
 
 ```bash
-pnpm dev          # dans un premier terminal
-python3 scripts/record-demo.py
+# Gemini Flash (défaut) — nécessite une connexion internet, aucun GPU
+pnpm dev
+
+# Tesseract local — fonctionne hors-ligne, sans clé ni quota
+OCR_ENGINE=tesseract pnpm dev
 ```
 
-## Fonctionnement
+## Utilisation
 
-1. L'utilisateur dépose une image.
-2. Le front envoie l'image encodée en base64 au serveur.
-3. Le serveur pré-traite l'image (redressement, niveaux de gris, normalisation, netteté).
-4. Le serveur exécute l'OCR, extrait les champs et valide leur cohérence.
-5. La réponse JSON indique pour chaque champ une valeur, un statut et un niveau de confiance.
+1. Ouvrir [http://localhost:3000](http://localhost:3000)
+2. Déposer le recto d'une CIN fictive (exemples fournis dans `fixtures/`)
+3. Cliquer sur **Lire la CIN**
+4. Lire le résultat structuré et la sortie JSON
 
-## Champs extraits
+## Tests
 
-- nom
-- prénom
-- date de naissance
-- numéro de CIN
-- date de fin de validité
+```bash
+pnpm test     # 9 tests : auth, moteur Tesseract, moteur Gemini
+pnpm check    # vérification TypeScript
+pnpm build    # build de production
+```
 
-## Robustesse
+Les tests Gemini sont tolérants au quota du palier gratuit : si l'API répond 429, le test vérifie que l'erreur est gérée proprement au lieu d'échouer.
 
-Le système distingue :
+## Structure du dépôt
 
-- un champ illisible ;
-- une image qui n'est pas une CIN ;
-- une erreur de format ou de cohérence.
+```
+client/src/pages/Home.tsx   Interface de dépôt et d'affichage des résultats
+server/routers.ts           Route tRPC ocr.extractCin + moteur Tesseract (repli)
+server/gemini.ts            Moteur Gemini Flash (appel API, parsing, validation)
+server/prompts/             Prompt d'extraction versionné (v1.0)
+shared/types.ts             Contrat JSON partagé front/back
+fixtures/                   9 images fictives de test + RESULTATS.md
+demo/                       Vidéo de démonstration de secours (MP4)
+presentation/               PPTX de soutenance développé + étude de cas PDF
+docs/INSTALLATION.md        Guide d'installation détaillé
+```
+
+## Documentation
+
+- [Guide d'installation développeur détaillé](docs/INSTALLATION.md)
+- [Résultats sur le jeu de test](fixtures/RESULTATS.md)
+- [Dépôt GitHub](https://github.com/compleoRepos/ocr)
