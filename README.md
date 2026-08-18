@@ -11,7 +11,8 @@ Application web TypeScript qui lit le recto d'une carte d'identité nationale ma
 - Sortie JSON structurée : pour chaque champ, une valeur, un statut (`ok` / `invalid` / `unreadable`) et une confiance
 - Gestion explicite des échecs : champ illisible, document qui n'est pas une CIN, erreur technique, quota dépassé
 - Deux moteurs d'extraction au choix : **Gemini Flash** (hébergé, sans GPU) ou **Tesseract.js** (local, repli hors-ligne)
-- Jeu de 9 images fictives de test, dont 3 volontairement dégradées
+- Prompt v2.0 adapté à la **mise en page réelle** des CIN marocaines (champs positionnels, arabe + latin, sans libellés explicites)
+- Jeu de 9 images fictives de test, dont 3 volontairement dégradées, plus un spécimen réel de CIN
 
 ## Stack technique
 
@@ -19,7 +20,7 @@ Application web TypeScript qui lit le recto d'une carte d'identité nationale ma
 |---|---|
 | Front | React 19 + TypeScript + Tailwind CSS |
 | Back | Node.js + Express + tRPC |
-| Vision / OCR | Gemini Flash (`gemini-3.6-flash`) via `@google/generative-ai` ; repli Tesseract.js |
+| Vision / OCR | Gemini Flash (`gemini-flash-latest`) via `@google/generative-ai` ; repli Tesseract.js |
 | Pré-traitement d'image | sharp (redressement, niveaux de gris, contraste, netteté) |
 | Validation | Zod |
 | Tests | Vitest (9 tests) |

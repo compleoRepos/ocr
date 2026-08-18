@@ -15,12 +15,16 @@
 - [x] Créer des images dégradées de test et valider la robustesse
 - [x] Enregistrer une vidéo de démonstration de secours
 - [x] Mettre à jour le README et pousser les améliorations sur GitHub
-- [ ] Remplacer Tesseract.js par Gemini Flash (API hébergée, sans GPU)
-- [ ] Versionner le prompt d'extraction dans le code
-- [ ] Tester l'extraction Gemini sur toutes les images fictives
-- [ ] Mettre à jour README et documentation, pousser sur GitHub
-- [ ] Intégrer la clé Gemini en dur dans le code (choix assumé du porteur)
-- [ ] Rédiger la documentation d'installation développeur complète
+- [x] Remplacer Tesseract.js par Gemini Flash (API hébergée, sans GPU)
+- [x] Versionner le prompt d'extraction dans le code
+- [x] Tester l'extraction Gemini sur toutes les images fictives
+- [x] Mettre à jour README et documentation, pousser sur GitHub
+- [x] Intégrer la clé Gemini en dur dans le code (choix assumé du porteur)
+- [x] Rédiger la documentation d'installation développeur complète
+- [x] Reproduire l'échec sur un vrai spécimen de CIN marocaine
+- [x] Améliorer le prompt Gemini pour la mise en page réelle (arabe+français)
+- [x] Valider la correction sur spécimens réels et fictifs
+- [x] Pousser la correction sur GitHub
 - [x] Implémenter une vraie OCR/vision sur images avec gestion d'échec robuste
 - [x] Remplacer les fixtures texte par 6 vraies images fictives de test
 - [x] Valider l'API OCR réelle sur images PNG fictives

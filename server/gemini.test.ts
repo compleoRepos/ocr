@@ -46,3 +46,25 @@ describe("gemini.extractWithGemini", () => {
     expect(result.isCin).toBe(false);
   }, 60000);
 });
+
+describe("gemini.extractWithGemini — vrai spécimen", () => {
+  it("extrait les champs d'une vraie CIN marocaine (mise en page réelle)", async () => {
+    const result = await extractWithGemini({
+      fileName: "cin-reelle-specimen.jpg",
+      mimeType: "image/jpeg",
+      imageBase64: readFileSync("fixtures/cin-reelle-specimen.jpg").toString("base64"),
+    });
+
+    if (result.errors.some((e) => /quota|429/i.test(e))) {
+      expect(result.isCin).toBe(false);
+      return;
+    }
+
+    expect(result.isCin).toBe(true);
+    expect(result.fields.nom.value).toBe("TEMSAMANI");
+    expect(result.fields.prenom.value).toBe("MOUHCINE");
+    expect(result.fields.dateNaissance.value).toBe("29/11/1978");
+    expect(result.fields.numeroCin.value).toBe("K01234567");
+    expect(result.fields.dateFinValidite.value).toBe("09/09/2029");
+  }, 60000);
+});

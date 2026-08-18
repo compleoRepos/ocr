@@ -2,7 +2,11 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 import type { CinExtractionResult, CinFieldResult, OcrRequestPayload } from "@shared/types";
 import { CIN_EXTRACTION_PROMPT } from "./prompts/cinExtraction";
 
-const MODEL_NAME = "gemini-3.6-flash";
+// gemini-flash-latest pointe vers la version Flash stable courante.
+// Choisie car le quota gratuit de gemini-3.6-flash (20 req/jour) est trop
+// restrictif pour une démonstration ; gemini-flash-latest dispose d'un
+// quota séparé plus confortable sur le palier gratuit.
+const MODEL_NAME = "gemini-flash-latest";
 
 /**
  * Clé API Gemini (palier gratuit Google AI Studio).
@@ -113,7 +117,7 @@ export async function extractWithGemini(payload: OcrRequestPayload): Promise<Cin
 
     const f = parsed.fields ?? {};
     const numeroCin = f.numeroCin?.value ? f.numeroCin.value.replace(/\s+/g, "").toUpperCase() : null;
-    const numeroCinValid = numeroCin ? /^[A-Z]{1,2}\d{5,8}$/.test(numeroCin) : false;
+    const numeroCinValid = numeroCin ? /^[A-Z]{1,3}\d{4,8}$/.test(numeroCin) : false;
     const birthValid = isPlausibleDate(f.dateNaissance?.value ?? null);
     const expiryValid = isPlausibleDate(f.dateFinValidite?.value ?? null);
 
