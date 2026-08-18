@@ -50,6 +50,84 @@ function extractAfterLabel(text: string, labels: string[]): string | null {
   return null;
 }
 
+/**
+ * Extraction positionnelle pour les VRAIES CIN marocaines.
+ * Sur une carte réelle, les champs n'ont pas de libellés explicites :
+ * le nom et le prénom sont des lignes latines en majuscules sous l'en-tête,
+ * le numéro de CIN suit le motif N° XXX9999, les dates sont au format JJ.MM.AAAA.
+ */
+function extractPositional(rawText: string): {
+  nom: string | null;
+  prenom: string | null;
+  dateNaissance: string | null;
+  numeroCin: string | null;
+  dateFinValidite: string | null;
+} {
+  // 1. Numéro de CIN : motif "N° K01234567" ou code isolé lettre(s)+chiffres
+  let numeroCin: string | null = null;
+  const cinMatch = rawText.match(/N[°oº]?\s*([A-Z]{1,3}\d{4,8})\b/i)
+    ?? rawText.match(/\b([A-Z]{1,2}\d{6,8})\b/);
+  if (cinMatch?.[1]) numeroCin = cinMatch[1].toUpperCase();
+
+  // 2. Dates au format JJ.MM.AAAA ou JJ/MM/AAAA
+  const dateMatches: string[] = [];
+  const dateRegex = /(\d{2})[.\/](\d{2})[.\/](\d{4})/g;
+  let dm: RegExpExecArray | null;
+  while ((dm = dateRegex.exec(rawText)) !== null) {
+    dateMatches.push(`${dm[1]}/${dm[2]}/${dm[3]}`);
+  }
+  const dateNaissance = dateMatches[0] ?? null;
+  // La date de validité est celle proche de "Valable jusqu'au", sinon la dernière date trouvée
+  let dateFinValidite: string | null = null;
+  const validiteMatch = rawText.match(/[Vv]alable jusqu['']au\s*(\d{2})[.\/](\d{2})[.\/](\d{4})/);
+  if (validiteMatch) {
+    dateFinValidite = `${validiteMatch[1]}/${validiteMatch[2]}/${validiteMatch[3]}`;
+  } else if (dateMatches.length > 1) {
+    dateFinValidite = dateMatches[dateMatches.length - 1];
+  }
+
+  // 3. Nom et prénom : lignes latines en majuscules (hors en-tête et libellés)
+  const STOP_WORDS = new Set([
+    "ROYAUME", "MAROC", "CARTE", "NATIONALE", "IDENTITE", "IDENTITÉ",
+    "NELE", "NÉLE", "NE", "NÉE", "LE", "LA", "DE", "DU", "DES", "ET",
+    "TANGER", "ASSILAH", "VALABLE", "JUSQU", "AU", "CASABLANCA", "RABAT",
+    "MARRAKECH", "FES", "FÈS", "AGADIR", "ESPADNE", "ESPAGNE", "MADRID",
+  ]);
+  const candidates: string[] = [];
+  for (const line of rawText.split("\n")) {
+    const cleaned = line.replace(/[^A-Za-zÀ-ÿ\s-]/g, " ").trim();
+    const tokens = cleaned.split(/\s+/).filter(Boolean);
+    // Cherche un mot latin en majuscules dans la ligne (même si la ligne
+    // contient du bruit OCR comme "nee, - MOUHCINE")
+    for (const w of tokens) {
+      if (
+        w.length >= 3 &&
+        /^[A-ZÀ-Þ][A-ZÀ-Þ-]+$/.test(w) &&
+        !STOP_WORDS.has(w.toUpperCase()) &&
+        !/^\d/.test(w) &&
+        !/^[A-Z]{1,3}\d{4,8}$/.test(w) &&
+        !candidates.includes(w.toUpperCase())
+      ) {
+        candidates.push(w.toUpperCase());
+        break; // un seul candidat par ligne
+      }
+    }
+  }
+  // Sur une vraie CIN, l'ordre vertical OCR est souvent prénom PUIS nom
+  // (le prénom apparaît au-dessus du nom sur la carte nouvelle génération).
+  // Heuristique : si deux candidats, le premier est le prénom, le second le nom.
+  let nom: string | null = null;
+  let prenom: string | null = null;
+  if (candidates.length >= 2) {
+    prenom = candidates[0];
+    nom = candidates[1];
+  } else if (candidates.length === 1) {
+    nom = candidates[0];
+  }
+
+  return { nom, prenom, dateNaissance, numeroCin, dateFinValidite };
+}
+
 async function extractTextFromImage(payload: OcrRequestPayload): Promise<string> {
   const worker = await createWorker("fra");
   try {
@@ -140,13 +218,27 @@ async function performOcrExtraction(payload: OcrRequestPayload): Promise<CinExtr
     };
   }
 
-  const nom = extractAfterLabel(rawText, ["NOM", "Nom"]);
-  const prenom = extractAfterLabel(rawText, ["PRENOM", "PRÉNOM", "Prenom", "Prénom"]);
-  const dateNaissance = normalizeDate(extractAfterLabel(rawText, ["DATE DE NAISSANCE", "NE LE", "NÉ LE"]));
-  const numeroCin = extractAfterLabel(rawText, ["CIN", "NUMERO", "NUMÉRO", "N°"]);
-  const dateFinValidite = normalizeDate(extractAfterLabel(rawText, ["VALIDE JUSQU'AU", "DATE DE FIN DE VALIDITE", "FIN VALIDITE"]));
+  // Extraction par libellés (spécimens fictifs) puis repli positionnel (vraies CIN)
+  const positional = extractPositional(rawText);
+  const nom = extractAfterLabel(rawText, ["NOM", "Nom"]) ?? positional.nom;
+  const prenom = extractAfterLabel(rawText, ["PRENOM", "PRÉNOM", "Prenom", "Prénom"]) ?? positional.prenom;
+  const dateNaissance =
+    normalizeDate(extractAfterLabel(rawText, ["DATE DE NAISSANCE", "NE LE", "NÉ LE"])) ??
+    positional.dateNaissance;
+  // Pour le numéro de CIN, on privilégie le motif positionnel (N° K01234567)
+  // car le libellé "N°" seul capture le premier caractère de la ligne.
+  const numeroCinLabel = extractAfterLabel(rawText, ["CIN", "NUMERO", "NUMÉRO"]);
+  const numeroCin = positional.numeroCin ?? numeroCinLabel;
+  const dateFinValidite =
+    normalizeDate(extractAfterLabel(rawText, ["VALIDE JUSQU'AU", "DATE DE FIN DE VALIDITE", "FIN VALIDITE"])) ??
+    positional.dateFinValidite;
 
-  const numeroCinValid = numeroCin ? /^[A-Z]{1,2}\d{5,8}$/i.test(numeroCin.replace(/\s+/g, "")) : false;
+  // Nettoyage du numéro de CIN (peut contenir du texte parasite)
+  const numeroCinClean = numeroCin
+    ? (numeroCin.match(/[A-Z]{1,3}\d{4,8}/i)?.[0] ?? null)
+    : null;
+
+  const numeroCinValid = numeroCinClean ? /^[A-Z]{1,3}\d{4,8}$/i.test(numeroCinClean) : false;
   const birthDateValid = isPlausibleDate(dateNaissance);
   const expiryDateValid = isPlausibleDate(dateFinValidite);
 
@@ -161,7 +253,7 @@ async function performOcrExtraction(payload: OcrRequestPayload): Promise<CinExtr
       nom: field(nom, nom ? 0.98 : 0),
       prenom: field(prenom, prenom ? 0.97 : 0),
       dateNaissance: field(dateNaissance, birthDateValid ? 0.95 : 0, birthDateValid ? undefined : "Date illisible ou incohérente"),
-      numeroCin: field(numeroCin ? numeroCin.replace(/\s+/g, "").toUpperCase() : null, numeroCinValid ? 0.99 : 0, numeroCinValid ? undefined : "Format de CIN invalide"),
+      numeroCin: field(numeroCinClean ? numeroCinClean.toUpperCase() : null, numeroCinValid ? 0.99 : 0, numeroCinValid ? undefined : "Format de CIN invalide"),
       dateFinValidite: field(dateFinValidite, expiryDateValid ? 0.94 : 0, expiryDateValid ? undefined : "Date illisible ou incohérente"),
     },
     errors,

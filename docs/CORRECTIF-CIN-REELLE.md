@@ -35,3 +35,13 @@ Test automatisé `server/gemini.test.ts` — « vrai spécimen » :
 | dateFinValidite | 09/09/2029 | 09/09/2029 (0,99) |
 
 Suite complète : **10/10 tests passés** (auth, Tesseract, Gemini fictifs, Gemini vrai spécimen).
+
+## Correctif complémentaire : repli Tesseract sur vraie CIN
+
+Le repli local Tesseract échouait aussi sur les vraies CIN : sans libellés explicites, l'extraction par libellés ne trouvait rien. Une **extraction positionnelle** a été ajoutée (`extractPositional` dans `server/routers.ts`) :
+
+- numéro de CIN par motif `N° K01234567` ou code isolé lettres+chiffres ;
+- dates au format `JJ.MM.AAAA` ou `JJ/MM/AAAA` (la date de validité est celle proche de « Valable jusqu'au ») ;
+- nom et prénom détectés comme mots latins en majuscules hors en-tête, avec gestion du bruit OCR (`nee, - MOUHCINE`).
+
+Validation : le repli Tesseract extrait désormais **TEMSAMANI / MOUHCINE / 29/11/1978 / K01234567 / 09/09/2029** sur le vrai spécimen. Suite complète : **11/11 tests passés**.

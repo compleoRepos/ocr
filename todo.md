@@ -27,6 +27,9 @@
 - [x] Pousser la correction sur GitHub
 - [x] Ajouter le repli automatique Gemini→Tesseract sur quota dépassé
 - [x] Tester le repli et pousser sur GitHub
+- [x] Diagnostiquer la sortie Tesseract brute sur le vrai spécimen
+- [x] Implémenter l'extraction positionnelle pour vraies CIN dans le repli Tesseract
+- [x] Valider sur spécimen réel et pousser sur GitHub
 - [x] Implémenter une vraie OCR/vision sur images avec gestion d'échec robuste
 - [x] Remplacer les fixtures texte par 6 vraies images fictives de test
 - [x] Valider l'API OCR réelle sur images PNG fictives
